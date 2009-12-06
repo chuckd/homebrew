@@ -24,6 +24,27 @@
 FORMULA_META_FILES = %w[README ChangeLog COPYING LICENSE COPYRIGHT AUTHORS]
 PLEASE_REPORT_BUG = "#{Tty.white}Please report this bug at #{Tty.em}http://github.com/mxcl/homebrew/issues#{Tty.reset}"
 
+def check_for_blacklisted_formula names
+  return if ARGV.force?
+
+  names.each do |name|
+    case name
+    when 'bazaar', 'bzr' then abort <<-EOS
+Bazaar can be installed thusly:
+
+    brew install pip && pip install bzr==2.0.1
+
+    EOS
+    when 'mercurial', 'hg' then abort <<-EOS
+Mercurial can be install thusly:
+
+    brew install pip && pip install mercurial
+
+    EOS
+    end
+  end
+end
+
 def __make url, name
   require 'formula'
 
@@ -383,11 +404,11 @@ class Cleaner
     # you can read all of this stuff online nowadays, save the space
     # info pages are pants, everyone agrees apart from Richard Stallman
     # feel free to ask for build options though! http://bit.ly/Homebrew
-    (f.prefix+'share'+'doc').rmtree rescue nil
-    (f.prefix+'share'+'info').rmtree rescue nil
-    (f.prefix+'doc').rmtree rescue nil
-    (f.prefix+'docs').rmtree rescue nil
-    (f.prefix+'info').rmtree rescue nil
+    unlink = Proc.new{ |path| path.unlink unless f.skip_clean? path rescue nil }
+    %w[doc docs info].each do |fn|
+      unlink.call(f.share+fn)
+      unlink.call(f.prefix+fn)
+    end
   end
 
 private
