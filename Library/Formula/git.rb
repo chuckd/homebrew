@@ -1,13 +1,13 @@
 require 'formula'
 
 class GitManuals <Formula
-  url 'http://kernel.org/pub/software/scm/git/git-manpages-1.6.5.3.tar.bz2'
-  md5 'dc2cf85cb1f29b586a1353307093bc62'
+  url 'http://kernel.org/pub/software/scm/git/git-manpages-1.6.5.5.tar.bz2'
+  md5 '223c2d831927c0b11830feadb56df77d'
 end
 
 class Git <Formula
-  url 'http://kernel.org/pub/software/scm/git/git-1.6.5.3.tar.bz2'
-  md5 'a1dbc3da46cbf33c4367db689853c142'
+  url 'http://kernel.org/pub/software/scm/git/git-1.6.5.5.tar.bz2'
+  md5 'fd575f22e67adbea1d17e5bc66a80f8d'
   homepage 'http://git-scm.com'
 
   def install
