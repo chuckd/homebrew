@@ -38,6 +38,8 @@ class Imagemagick <Formula
     ENV.deparallelize
     ENV.O3 # takes forever otherwise
 
+    ENV.gcc_4_2
+
     fix_configure
 
     system "./configure", "--without-maximum-compile-warnings",
