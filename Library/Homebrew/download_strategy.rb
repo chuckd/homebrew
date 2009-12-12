@@ -52,6 +52,7 @@ class CurlDownloadStrategy <AbstractDownloadStrategy
     end
     return @dl # thus performs checksum verification
   end
+
   def stage
     # magic numbers stolen from /usr/share/file/magic/
     File.open(@dl) do |f|
@@ -74,6 +75,7 @@ class CurlDownloadStrategy <AbstractDownloadStrategy
       end
     end
   end
+
 private
   def chdir
     entries=Dir['*']
@@ -82,6 +84,7 @@ private
       when 1 then Dir.chdir entries.first rescue nil
     end
   end
+
   def ext
     # GitHub uses odd URLs for zip files, so check for those
     rx=%r[http://(www\.)?github\.com/.*/(zip|tar)ball/]
@@ -97,12 +100,11 @@ private
   end
 end
 
-class HttpDownloadStrategy <CurlDownloadStrategy
-  def initialize url, name, version, specs
-    opoo "HttpDownloadStrategy is deprecated"
-    puts "Please use CurlDownloadStrategy in future"
-    puts "HttpDownloadStrategy will be removed in version 0.5"
-    super url, name, version, specs
+# Use this strategy to download but not unzip a file.
+# Useful for installing jars.
+class NoUnzipCurlDownloadStrategy <CurlDownloadStrategy
+  def stage
+    FileUtils.mv @dl, File.basename(@url)
   end
 end
 
@@ -119,6 +121,7 @@ class SubversionDownloadStrategy <AbstractDownloadStrategy
       puts "Repository already checked out"
     end
   end
+
   def stage
     # Force the export, since the target directory will already exist
     args = [svn, 'export', '--force', @co, Dir.pwd]
@@ -127,7 +130,9 @@ class SubversionDownloadStrategy <AbstractDownloadStrategy
     safe_system *args
   end
 
-  # currently only used by mplayer.rb
+  # Override this method in a DownloadStrategy to force the use of a non-
+  # sysetm svn binary. mplayer.rb uses this to require a svn that
+  # understands externals.
   def svn
     '/usr/bin/svn'
   end
@@ -144,6 +149,7 @@ class GitDownloadStrategy <AbstractDownloadStrategy
       puts "Repository already cloned to #{@clone}"
     end
   end
+
   def stage
     dst = Dir.getwd
     Dir.chdir @clone do
@@ -188,7 +194,6 @@ class CVSDownloadStrategy <AbstractDownloadStrategy
     FileUtils.cp_r(Dir[HOMEBREW_CACHE+@unique_token+"*"], Dir.pwd)
 
     require 'find'
-
     Find.find(Dir.pwd) do |path|
       if FileTest.directory?(path) && File.basename(path) == "CVS"
         Find.prune
@@ -220,12 +225,18 @@ class MercurialDownloadStrategy <AbstractDownloadStrategy
     url=@url.sub(%r[^hg://], '')
 
     unless @clone.exist?
-      safe_system 'hg', 'clone', url, @clone
+      checkout_args = []
+      if (@spec == :revision) and @ref
+        checkout_args << '-r' << @ref
+      end
+      checkout_args << url << @clone
+      safe_system 'hg', 'clone', *checkout_args
     else
       # TODO hg pull?
       puts "Repository already cloned"
     end
   end
+
   def stage
     dst=Dir.getwd
     Dir.chdir @clone do
